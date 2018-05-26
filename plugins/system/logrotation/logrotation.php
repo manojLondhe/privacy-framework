@@ -42,7 +42,7 @@ class PlgSystemLogrotation extends JPlugin
 
 		/** @var \Joomla\Registry\Registry $params */
 		$cache_timeout = (int) $this->params->get('cachetimeout', 6);
-		$cache_timeout = 3600 * $cache_timeout;
+		$cache_timeout = 24 * 3600 * $cache_timeout;
 		$logstokeep    = (int) $this->params->get('logstokeep', 5);
 		$purge         = $this->params->get('purge', false);
 
