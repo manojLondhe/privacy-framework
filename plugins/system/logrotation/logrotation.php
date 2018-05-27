@@ -136,20 +136,13 @@ class PlgSystemLogrotation extends JPlugin
 			return;
 		}
 
-		// Set the log files for Joomla! core
-		$files = array(
-				'deprecated.php',
-				'error.php',
-				'everything.php',
-				'joomla_update.php',
-				'upload.error.php',
-				'jmodulehelper.log.php',
-				'jcontroller.log.php',
-				'indexer.php',
-		);
+		// Get the log files not the already rotated one (i.e. file not starting with a digit)
+		$files = \JFolder::files($logpath, '^[a-zA-Z].*\.php$', 1, true);
 
 		foreach ($files as $file)
 		{
+			$file = str_replace($logpath . '/', '', $file);
+			
 			if (!\JFile::exists($logpath . '/' . $file))
 			{
 				// Ignore it
