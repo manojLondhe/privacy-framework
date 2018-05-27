@@ -41,7 +41,7 @@ class PlgSystemLogrotation extends JPlugin
 		// Get the timeout as configured in plugin parameters
 
 		/** @var \Joomla\Registry\Registry $params */
-		$cache_timeout = (int) $this->params->get('cachetimeout', 6);
+		$cache_timeout = (int) $this->params->get('cachetimeout', 7);
 		$cache_timeout = 24 * 3600 * $cache_timeout;
 		$logstokeep    = (int) $this->params->get('logstokeep', 5);
 		$purge         = $this->params->get('purge', false);
@@ -112,7 +112,7 @@ class PlgSystemLogrotation extends JPlugin
 		// Get the log path
 		$logpath = \JFactory::getApplication()->get('log_path');
 
-		// Clean all files in log folder 
+		// Clean all log files in log folder 
 		if ($purge)
 		{
 			if (!\JFolder::exists($logpath))
@@ -120,7 +120,7 @@ class PlgSystemLogrotation extends JPlugin
 				return;
 			}
 
-			$files = \JFolder::files($logpath, '', 1, true);
+			$files = \JFolder::files($logpath, '\.php$', 1, true);
 
 			foreach ($files as $file)
 			{
@@ -138,42 +138,42 @@ class PlgSystemLogrotation extends JPlugin
 
 		// Set the log files for Joomla! core
 		$files = array(
-				$logpath . '/deprecated.php',
-				$logpath . '/error.php',
-				$logpath . '/everything.php',
-				$logpath . '/joomla_update.php',
-				$logpath . '/upload.error.php',
-				$logpath . '/jmodulehelper.log.php',
-				$logpath . '/jcontroller.log.php',
-				$logpath . '/indexer.php',
+				'deprecated.php',
+				'error.php',
+				'everything.php',
+				'joomla_update.php',
+				'upload.error.php',
+				'jmodulehelper.log.php',
+				'jcontroller.log.php',
+				'indexer.php',
 		);
 
 		foreach ($files as $file)
 		{
-			if (!\JFile::exists($file))
+			if (!\JFile::exists($logpath . '/' . $file))
 			{
 				// Ignore it
 				continue;
 			}
 
 			// Let's rotate log files
-			if (\JFile::exists($file . "." . $logstokeep))
+			if (\JFile::exists($logpath . '/' . $logstokeep . '.' . $file))
 			{
 				// Delete the oldest one
-				\JFile::delete($file . "." . $logstokeep);
+				\JFile::delete($logpath . '/' . $logstokeep . '.' . $file);
 			}
 
 			for ($i = $logstokeep; $i > 0; $i--)
 			{
-				if (\JFile::exists($file . "." . $i))
+				if (\JFile::exists($logpath . '/' . $i . '.' . $file))
 				{
 					// Shift name plus one
 					$next = $i + 1;
-					\JFile::move($file . "." . $i, $file . "." . $next);
+					\JFile::move($logpath . '/' . $i . '.' . $file, $logpath . '/' . $next . '.' . $file);
 				}
 			}
 
-			\JFile::move($file, $file . ".1");
+			\JFile::move($logpath . '/' . $file, $logpath . '/1.' . $file);
 		}
 	}
 
