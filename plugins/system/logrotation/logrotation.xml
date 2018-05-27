@@ -25,9 +25,9 @@
 					label="PLG_SYSTEM_LOGROTATION_CACHETIMEOUT_LABEL"
 					description="PLG_SYSTEM_LOGROTATION_CACHETIMEOUT_DESC"
 					first="0"
-					last="24"
+					last="14"
 					step="1"
-					default="6"
+					default="7"
 				/>
 
 				<field
@@ -47,7 +47,7 @@
 					label="PLG_SYSTEM_LOGROTATION_PURGE_LABEL"
 					description="PLG_SYSTEM_LOGROTATION_PURGE_DESC"
 					class="btn-group btn-group-yesno"
-					default="1"
+					default="0"
 					filter="uint"
 					>
 					<option value="1">JYES</option>
