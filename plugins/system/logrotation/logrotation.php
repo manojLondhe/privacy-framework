@@ -9,8 +9,9 @@
 
 defined('_JEXEC') or die;
 
-\JLoader::import('joomla.filesystem.file');
-\JLoader::import('joomla.filesystem.folder');
+use Joomla\Filesystem\File;
+use Joomla\Filesystem\Folder;
+use Joomla\Filesystem\Path;
 
 /**
  * Joomla! Log Rotation plugin
@@ -22,12 +23,28 @@ defined('_JEXEC') or die;
 class PlgSystemLogrotation extends JPlugin
 {
 	/**
-	 * Load plugin language files automatically
+	 * Load the language file on instantiation.
 	 *
 	 * @var    boolean
 	 * @since  __DEPLOY_VERSION__
 	 */
 	protected $autoloadLanguage = true;
+
+	/**
+	 * Application object.
+	 *
+	 * @var    JApplicationCms
+	 * @since  __DEPLOY_VERSION__
+	 */
+	protected $app;
+
+	/**
+	 * Database object.
+	 *
+	 * @var    JDatabaseDriver
+	 * @since  __DEPLOY_VERSION__
+	 */
+	protected $db;
 
 	/**
 	 * The log check and rotation code is triggered after the page has fully rendered.
@@ -43,7 +60,7 @@ class PlgSystemLogrotation extends JPlugin
 		/** @var \Joomla\Registry\Registry $params */
 		$cache_timeout = (int) $this->params->get('cachetimeout', 7);
 		$cache_timeout = 24 * 3600 * $cache_timeout;
-		$logstokeep    = (int) $this->params->get('logstokeep', 5);
+		$logsToKeep    = (int) $this->params->get('logstokeep', 5);
 		$purge         = $this->params->get('purge', false);
 
 		// Do we need to run? Compare the last run timestamp stored in the plugin's options with the current
@@ -59,13 +76,13 @@ class PlgSystemLogrotation extends JPlugin
 		// Update last run status
 		$this->params->set('lastrun', $now);
 
-		$db = JFactory::getDbo();
+		$db    = $this->db;
 		$query = $db->getQuery(true)
-					->update($db->qn('#__extensions'))
-					->set($db->qn('params') . ' = ' . $db->q($this->params->toString('JSON')))
-					->where($db->qn('type') . ' = ' . $db->q('plugin'))
-					->where($db->qn('folder') . ' = ' . $db->q('system'))
-					->where($db->qn('element') . ' = ' . $db->q('logrotation'));
+			->update($db->qn('#__extensions'))
+			->set($db->qn('params') . ' = ' . $db->q($this->params->toString('JSON')))
+			->where($db->qn('type') . ' = ' . $db->q('plugin'))
+			->where($db->qn('folder') . ' = ' . $db->q('system'))
+			->where($db->qn('element') . ' = ' . $db->q('logrotation'));
 
 		try
 		{
@@ -110,64 +127,134 @@ class PlgSystemLogrotation extends JPlugin
 		}
 
 		// Get the log path
-		$logpath = \JFactory::getApplication()->get('log_path');
+		$logPath = Path::clean($this->app->get('log_path'));
 
-		// Clean all log files in log folder 
+		// Invalid path, stop processing further
+		if (!is_dir($logPath))
+		{
+			return;
+		}
+
+		// Clean all log files in log folder
 		if ($purge)
 		{
-			if (!\JFolder::exists($logpath))
-			{
-				return;
-			}
-
-			$files = \JFolder::files($logpath, '\.php$', 1, true);
+			$files = Folder::files($logPath, '\.php$', 1, true);
 
 			foreach ($files as $file)
 			{
-				if (!\JFile::exists($file))
-				{
-					// Ignore it
-					continue;
-				}
-
-				\JFile::delete($file);
+				File::delete($file);
 			}
 
 			return;
 		}
 
-		// Get the log files not the already rotated one (i.e. file not starting with a digit)
-		$files = \JFolder::files($logpath, '^[a-zA-Z].*\.php$', 1, true);
+		$logFiles = $this->getLogFiles($logPath);
 
-		foreach ($files as $file)
+		// Delete the rotated log files which has version reaches the $logsToKeep limit
+		if (isset($logFiles[$logsToKeep]))
 		{
-			$file = str_replace($logpath . '/', '', $file);
-			
-			if (!\JFile::exists($logpath . '/' . $file))
+			$files = $logFiles[$logsToKeep];
+
+			foreach ($files as $file)
 			{
-				// Ignore it
+				File::delete($file);
+			}
+		}
+
+		// Rotates the remaining log files
+		for ($i = $logsToKeep - 1; $i >= 0; $i--)
+		{
+			if (!isset($logFiles[$i]))
+			{
+				// No log files found for that version, continue
 				continue;
 			}
 
-			// Let's rotate log files
-			if (\JFile::exists($logpath . '/' . $logstokeep . '.' . $file))
-			{
-				// Delete the oldest one
-				\JFile::delete($logpath . '/' . $logstokeep . '.' . $file);
-			}
+			$files = $logFiles[$i];
 
-			for ($i = $logstokeep; $i > 0; $i--)
+			foreach ($files as $file)
 			{
-				if (\JFile::exists($logpath . '/' . $i . '.' . $file))
-				{
-					// Shift name plus one
-					$next = $i + 1;
-					\JFile::move($logpath . '/' . $i . '.' . $file, $logpath . '/' . $next . '.' . $file);
-				}
+				$this->rotate($file, $i);
 			}
-
-			\JFile::move($logpath . '/' . $file, $logpath . '/1.' . $file);
 		}
+	}
+
+	/**
+	 * Get log files from log folder
+	 *
+	 * @param   string  $path  The folder to get log files
+	 *
+	 * @return  array   The log files in the given path grouped by version number (not rotated files has number 0)
+	 *
+	 * @since   __DEPLOY_VERSION__
+	 */
+	private function getLogFiles($path)
+	{
+		$logFiles = array();
+		$files    = Folder::files($path, '\.php$', 1, true);
+
+		foreach ($files as $file)
+		{
+			$filename = basename($file);
+			$parts    = explode('.', $filename);
+
+			/*
+			 * Rotated log file has this filename format [VERSION].[FILENAME].php. So if $parts has at least 3 elements
+			 * and the first element is a number, we know that it's a rotated file and can get it's current version
+			 */
+			if (count($parts) >= 3 && is_numeric($parts[0]))
+			{
+				$version = $parts[0];
+			}
+			else
+			{
+				$version = 0;
+			}
+
+			if (!isset($logFiles[$version]))
+			{
+				$logFiles[$version] = array();
+			}
+
+			$logFiles[$version][] = $file;
+		}
+
+		return $logFiles;
+	}
+
+	/**
+	 * Method to rotate (increase version) of a log file
+	 *
+	 * @param   string  $file            Path to file
+	 * @param   int     $currentVersion  The current version number
+	 *
+	 * @return  void
+	 *
+	 * @since   __DEPLOY_VERSION__
+	 */
+	private function rotate($file, $currentVersion)
+	{
+		$filename = basename($file);
+		$filePath = dirname($file);
+
+		if ($currentVersion == 0)
+		{
+			$rotatedFile = $filePath . '/1.' . $filename;
+		}
+		else
+		{
+			/*
+			 * Rotated log file has this filename format [VERSION].[FILENAME].php. To rotate it, we just need to explode
+			 * the filename into an array, increase value of first element (keep version) and implode it back to get the
+			 * rotated file name
+			 */
+			$filenameParts    = explode('.', $filename);
+			$filenameParts[0] = $currentVersion + 1;
+
+			$rotatedFile = $filePath . '/' . implode('.', $filenameParts);
+		}
+
+		File::move($file, $rotatedFile);
 	}
 
 	/**
