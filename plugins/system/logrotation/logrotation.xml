@@ -25,9 +25,9 @@
 					label="PLG_SYSTEM_LOGROTATION_CACHETIMEOUT_LABEL"
 					description="PLG_SYSTEM_LOGROTATION_CACHETIMEOUT_DESC"
 					first="0"
-					last="14"
+					last="120"
 					step="1"
-					default="7"
+					default="30"
 				/>
 
 				<field
@@ -38,21 +38,8 @@
 					first="1"
 					last="10"
 					step="1"
-					default="5"
+					default="1"
 				/>
-
-				<field
-					name="purge"
-					type="radio"
-					label="PLG_SYSTEM_LOGROTATION_PURGE_LABEL"
-					description="PLG_SYSTEM_LOGROTATION_PURGE_DESC"
-					class="btn-group btn-group-yesno"
-					default="0"
-					filter="uint"
-					>
-					<option value="1">JYES</option>
-					<option value="0">JNO</option>
-				</field>
 
 				<field
 					name="lastrun"
