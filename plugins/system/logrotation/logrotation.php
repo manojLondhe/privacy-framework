@@ -138,7 +138,7 @@ class PlgSystemLogrotation extends JPlugin
 		// Clean all log files in log folder
 		if ($purge)
 		{
-			$files = Folder::files($logPath, '\.php$', 1, true);
+			$files = Folder::files($logPath, '\.php$', false, true);
 
 			foreach ($files as $file)
 			{
@@ -157,7 +157,7 @@ class PlgSystemLogrotation extends JPlugin
 
 			foreach ($files as $file)
 			{
-				File::delete($file);
+				File::delete($logPath . '/' . $file);
 			}
 		}
 
@@ -174,7 +174,7 @@ class PlgSystemLogrotation extends JPlugin
 
 			foreach ($files as $file)
 			{
-				$this->rotate($file, $i);
+				$this->rotate($logPath, $file, $i);
 			}
 		}
 	}
@@ -191,12 +191,11 @@ class PlgSystemLogrotation extends JPlugin
 	private function getLogFiles($path)
 	{
 		$logFiles = array();
-		$files    = Folder::files($path, '\.php$', 1, true);
+		$files    = Folder::files($path, '\.php$');
 
 		foreach ($files as $file)
 		{
-			$filename = basename($file);
-			$parts    = explode('.', $filename);
+			$parts    = explode('.', $file);
 
 			/*
 			 * Rotated log file has this filename format [VERSION].[FILENAME].php. So if $parts has at least 3 elements
@@ -225,21 +224,19 @@ class PlgSystemLogrotation extends JPlugin
 	/**
 	 * Method to rotate (increase version) of a log file
 	 *
-	 * @param   string  $file            Path to file
+	 * @param   string  $path            Path to file to rotate
+	 * @param   string  $filename        Name of file to rotate
 	 * @param   int     $currentVersion  The current version number
 	 *
 	 * @return  void
 	 *
 	 * @since   __DEPLOY_VERSION__
 	 */
-	private function rotate($file, $currentVersion)
+	private function rotate($path, $filename, $currentVersion)
 	{
-		$filename = basename($file);
-		$filePath = dirname($file);
-
 		if ($currentVersion == 0)
 		{
-			$rotatedFile = $filePath . '/1.' . $filename;
+			$rotatedFile = $path . '/1.' . $filename;
 		}
 		else
 		{
@@ -248,13 +245,13 @@ class PlgSystemLogrotation extends JPlugin
 			 * the filename into an array, increase value of first element (keep version) and implode it back to get the
 			 * rotated file name
 			 */
-			$filenameParts    = explode('.', $filename);
-			$filenameParts[0] = $currentVersion + 1;
+			$parts    = explode('.', $filename);
+			$parts[0] = $currentVersion + 1;
 
-			$rotatedFile = $filePath . '/' . implode('.', $filenameParts);
+			$rotatedFile = $path . '/' . implode('.', $parts);
 		}
 
-		File::move($file, $rotatedFile);
+		File::move($path . '/' . $filename, $rotatedFile);
 	}
 
 	/**
