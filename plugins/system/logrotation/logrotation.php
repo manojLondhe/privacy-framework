@@ -60,8 +60,7 @@ class PlgSystemLogrotation extends JPlugin
 		/** @var \Joomla\Registry\Registry $params */
 		$cache_timeout = (int) $this->params->get('cachetimeout', 7);
 		$cache_timeout = 24 * 3600 * $cache_timeout;
-		$logsToKeep    = (int) $this->params->get('logstokeep', 5);
-		$purge         = $this->params->get('purge', false);
+		$logsToKeep    = (int) $this->params->get('logstokeep', 1);
 
 		// Do we need to run? Compare the last run timestamp stored in the plugin's options with the current
 		// timestamp. If the difference is greater than the cache timeout we shall not execute again.
@@ -132,19 +131,6 @@ class PlgSystemLogrotation extends JPlugin
 		// Invalid path, stop processing further
 		if (!is_dir($logPath))
 		{
-			return;
-		}
-
-		// Clean all log files in log folder
-		if ($purge)
-		{
-			$files = Folder::files($logPath, '\.php$', false, true);
-
-			foreach ($files as $file)
-			{
-				File::delete($file);
-			}
-
 			return;
 		}
 
