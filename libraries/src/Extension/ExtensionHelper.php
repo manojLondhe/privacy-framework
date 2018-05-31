@@ -63,7 +63,6 @@ class ExtensionHelper
 		array('component', 'com_tags', '', 1),
 		array('component', 'com_templates', '', 1),
 		array('component', 'com_users', '', 1),
-		array('component', 'com_userslogs', '', 1),
 		array('component', 'com_wrapper', '', 0),
 
 		// Core file extensions
@@ -86,7 +85,6 @@ class ExtensionHelper
 		array('module', 'mod_custom', '', 1),
 		array('module', 'mod_feed', '', 1),
 		array('module', 'mod_latest', '', 1),
-		array('module', 'mod_latestactions', '', 1),
 		array('module', 'mod_logged', '', 1),
 		array('module', 'mod_login', '', 1),
 		array('module', 'mod_menu', '', 1),
@@ -130,9 +128,6 @@ class ExtensionHelper
 
 		// Core package extensions
 		array('package', 'pkg_en-GB', '', 0),
-
-		// Core plugin extensions - actionlogs
-		array('plugin', 'joomla', 'actionlogs', 0),
 
 		// Core plugin extensions - authentication
 		array('plugin', 'cookie', 'authentication', 0),
@@ -235,7 +230,6 @@ class ExtensionHelper
 		array('plugin', 'sessiongc', 'system', 0),
 		array('plugin', 'stats', 'system', 0),
 		array('plugin', 'updatenotification', 'system', 0),
-		array('plugin', 'userlogs', 'system', 0),
 
 		// Core plugin extensions - two factor authentication
 		array('plugin', 'totp', 'twofactorauth', 0),
