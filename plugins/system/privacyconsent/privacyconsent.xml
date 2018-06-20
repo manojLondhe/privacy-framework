@@ -95,6 +95,18 @@
 					validate="number"
 				/>
 				<field
+					name="remind"
+					type="integer"
+					label="PLG_SYSTEM_PRIVACYCONSENT_REMINDBEFORE_LABEL"
+					description="PLG_SYSTEM_PRIVACYCONSENT_REMINDBEFORE_DESC"
+					first="0"
+					last="120"
+					step="1"
+					default="30"
+					filter="int"
+					validate="number"
+				/>
+				<field
 					name="lastrun"
 					type="hidden"
 					default="0"
